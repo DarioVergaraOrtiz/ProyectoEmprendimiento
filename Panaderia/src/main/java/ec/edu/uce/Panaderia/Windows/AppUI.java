@@ -20,6 +20,7 @@ public class AppUI extends JFrame implements KeyListener, InventoryUpdateListene
 
     // Mapa para almacenar los productos y sus precios
     private Map<String, Double> products;
+    private InventoryUI inventoryUI;
 
     public AppUI() throws HeadlessException {
         setTitle("Dasten App");
@@ -102,7 +103,17 @@ public class AppUI extends JFrame implements KeyListener, InventoryUpdateListene
         // Hacer visible la interfaz
         setVisible(true);
         setFocusable(true); // Hacer el JFrame foco para recibir eventos de teclado
-        addKeyListener(this); // Agregar el KeyListener a la ventana
+        addKeyListenerToAllComponents(this); // Agregar el KeyListener a todos los componentes
+    }
+
+    // Método para agregar KeyListener a todos los componentes
+    private void addKeyListenerToAllComponents(Component component) {
+        component.addKeyListener(this);
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                addKeyListenerToAllComponents(child);
+            }
+        }
     }
 
     // Método para crear un botón de producto con su nombre y acción de añadir al carrito
@@ -158,20 +169,21 @@ public class AppUI extends JFrame implements KeyListener, InventoryUpdateListene
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_I) { // Si se presiona la tecla 'I'
-            SwingUtilities.invokeLater(() -> {
-                InventoryUI inventoryUI = new InventoryUI();
-                inventoryUI.addInventoryUpdateListener(this); // Registrar AppUI como oyente
-                inventoryUI.setVisible(true);
-                inventoryUI.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        inventoryUI.setVisible(false); // Oculta la ventana en lugar de cerrarla
-                    }
+            if (inventoryUI == null || !inventoryUI.isDisplayable()) {
+                SwingUtilities.invokeLater(() -> {
+                    inventoryUI = new InventoryUI();
+                    inventoryUI.addInventoryUpdateListener(this); // Registrar AppUI como oyente
+                    inventoryUI.setVisible(true);
+                    inventoryUI.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosing(WindowEvent e) {
+                            inventoryUI.dispose(); // Cerrar la ventana completamente
+                        }
+                    });
                 });
-            });
+            }
         }
     }
-
 
     @Override
     public void keyReleased(KeyEvent e) {
